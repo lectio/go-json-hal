@@ -1,3 +1,3 @@
-module github.com/lectio/json-hal-go
+module github.com/lectio/go-json-hal
 
 go 1.12
