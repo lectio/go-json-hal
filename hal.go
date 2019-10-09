@@ -26,12 +26,12 @@ func NewResource(typeName string) Resource {
 }
 
 type Link struct {
-	Href       string `json:"href"`
-	Title      string `json:"title,omitempty"`
-	Templated  bool   `json:"templated,omitempty"`
-	Method     string `json:"method,omitempty"`
-	Payload    string `json:"payload,omitempty"`
-	Identifier string `json:"identifier,omitempty"`
+	Href       string      `json:"href"`
+	Title      string      `json:"title,omitempty"`
+	Templated  bool        `json:"templated,omitempty"`
+	Method     string      `json:"method,omitempty"`
+	Payload    interface{} `json:"payload,omitempty"`
+	Identifier string      `json:"identifier,omitempty"`
 }
 
 type Resource interface {
@@ -57,27 +57,38 @@ type ResourceObject struct {
 }
 
 func (res *ResourceObject) HasField(field string) bool {
-	_, ok := res.fields[field]
-	return ok
+	if res.fields != nil {
+		if _, ok := res.fields[field]; ok {
+			return true
+		}
+	}
+	return false
 }
 
 func (res *ResourceObject) GetField(field string) interface{} {
-	if val, ok := res.fields[field]; ok {
-		return val
+	if res.fields != nil {
+		if val, ok := res.fields[field]; ok {
+			return val
+		}
 	}
 	return nil
 }
 
 func (res *ResourceObject) GetString(field string) string {
-	if val, ok := res.fields[field]; ok {
-		if s, ok := val.(string); ok {
-			return s
+	if res.fields != nil {
+		if val, ok := res.fields[field]; ok {
+			if s, ok := val.(string); ok {
+				return s
+			}
 		}
 	}
 	return ""
 }
 
 func (res *ResourceObject) GetInt(field string) int {
+	if res.fields == nil {
+		return 0
+	}
 	val, ok := res.fields[field]
 	if ok {
 		switch n := val.(type) {
@@ -93,9 +104,11 @@ func (res *ResourceObject) GetInt(field string) int {
 }
 
 func (res *ResourceObject) GetEmbeddedResource(name string, c *HalClient) Resource {
-	if val, ok := res.embedded[name]; ok {
-		if res, ok := val.(Resource); ok {
-			return res
+	if res.embedded != nil {
+		if val, ok := res.embedded[name]; ok {
+			if res, ok := val.(Resource); ok {
+				return res
+			}
 		}
 	}
 	// Try loading from link
@@ -107,9 +120,11 @@ func (res *ResourceObject) GetEmbeddedResource(name string, c *HalClient) Resour
 }
 
 func (res *ResourceObject) GetEmbeddedResourceList(name string) []Resource {
-	if val, ok := res.embedded[name]; ok {
-		if arr, ok := val.([]Resource); ok {
-			return arr
+	if res.embedded != nil {
+		if val, ok := res.embedded[name]; ok {
+			if arr, ok := val.([]Resource); ok {
+				return arr
+			}
 		}
 	}
 	return nil
@@ -199,12 +214,6 @@ func (res *ResourceObject) decodeHAL(mData map[string]json.RawMessage) error {
 		switch key {
 		case "_type":
 		case "_links":
-			/*
-				if err := json.Unmarshal(val, &res.Links); err != nil {
-					log.Printf("---- Dump Raw Links: [%s]", string(val))
-					return err
-				}
-			*/
 			// Unmarshal map of arrays of RawMessages
 			var rawLinks map[string]json.RawMessage
 			if err := json.Unmarshal(val, &rawLinks); err != nil {
@@ -217,7 +226,7 @@ func (res *ResourceObject) decodeHAL(mData map[string]json.RawMessage) error {
 				case '{':
 					var link Link
 					if err := json.Unmarshal(val, &link); err != nil {
-						log.Printf("---- Unknown Link value: [%s]", string(val))
+						log.Printf(" -- Unmarshal error: %s", err)
 						return err
 					}
 					res.Links[key] = link
