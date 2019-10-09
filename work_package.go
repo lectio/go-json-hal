@@ -1,7 +1,5 @@
 package hal
 
-import "fmt"
-
 //
 // WorkPackage
 //
@@ -34,22 +32,40 @@ func (res *WorkPackage) Subject() string {
 	return res.GetString("subject")
 }
 
-func (res *WorkPackage) GetAttachments(c *HalClient) (*Collection, error) {
-	// Check if attachments are embedded
-	val := res.GetEmbeddedResource("attachments")
+func (res *WorkPackage) GetAttachments(c *HalClient) *Collection {
+	// Get embedded attachments or load from a link
+	val := res.GetEmbeddedResource("attachments", c)
 	if col, ok := val.(*Collection); ok {
-		return col, nil
+		return col
 	}
-	// Load attachments
-	linkRes, err := res.GetLinkResource(c, "attachments")
-	if err != nil {
-		return nil, err
+	return nil
+}
+
+func (res *WorkPackage) GetAuthor(c *HalClient) *User {
+	// Get embedded author or load from a link
+	val := res.GetEmbeddedResource("author", c)
+	if u, ok := val.(*User); ok {
+		return u
 	}
-	// Make sure it is a Collection
-	if col, ok := linkRes.(*Collection); ok {
-		return col, nil
+	return nil
+}
+
+func (res *WorkPackage) GetResponsible(c *HalClient) *User {
+	// Get embedded responsible or load from a link
+	val := res.GetEmbeddedResource("responsible", c)
+	if u, ok := val.(*User); ok {
+		return u
 	}
-	return nil, fmt.Errorf("Unknown resource type: %s", linkRes.ResourceType())
+	return nil
+}
+
+func (res *WorkPackage) GetAssignee(c *HalClient) *User {
+	// Get embedded assignee or load from a link
+	val := res.GetEmbeddedResource("assignee", c)
+	if u, ok := val.(*User); ok {
+		return u
+	}
+	return nil
 }
 
 // Register Factories

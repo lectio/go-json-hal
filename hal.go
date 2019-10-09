@@ -26,9 +26,12 @@ func NewResource(typeName string) Resource {
 }
 
 type Link struct {
-	Href  string `json:"href"`
-	Title string `json:"title"`
-	// TODO: add other fields
+	Href       string `json:"href"`
+	Title      string `json:"title,omitempty"`
+	Templated  bool   `json:"templated,omitempty"`
+	Method     string `json:"method,omitempty"`
+	Payload    string `json:"payload,omitempty"`
+	Identifier string `json:"identifier,omitempty"`
 }
 
 type Resource interface {
@@ -89,11 +92,16 @@ func (res *ResourceObject) GetInt(field string) int {
 	return 0
 }
 
-func (res *ResourceObject) GetEmbeddedResource(name string) Resource {
+func (res *ResourceObject) GetEmbeddedResource(name string, c *HalClient) Resource {
 	if val, ok := res.embedded[name]; ok {
 		if res, ok := val.(Resource); ok {
 			return res
 		}
+	}
+	// Try loading from link
+	if c != nil {
+		linkRes, _ := res.GetLinkResource(c, name)
+		return linkRes
 	}
 	return nil
 }
