@@ -1,5 +1,9 @@
 package hal
 
+import (
+	"io"
+)
+
 //
 // Attachment
 //
@@ -38,6 +42,11 @@ func (res *Attachment) FileSize() int {
 
 func (res *Attachment) ContentType() string {
 	return res.GetString("contentType")
+}
+
+func (res *Attachment) Download(c *HalClient) (io.Reader, error) {
+	link := res.GetLink("downloadLocation")
+	return c.LinkGetFile(link)
 }
 
 // Register Factories

@@ -3,6 +3,7 @@ package hal
 import (
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 )
 
@@ -33,6 +34,14 @@ func (c *HalClient) newGet(path string) (*http.Request, error) {
 	if c.apiKey != nil {
 		req.SetBasicAuth("apikey", *c.apiKey)
 	}
+	return req, nil
+}
+
+func (c *HalClient) newGetJSON(path string) (*http.Request, error) {
+	req, err := c.newGet(path)
+	if err != nil {
+		return nil, err
+	}
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Content-Type", "application/json")
 	return req, nil
@@ -48,8 +57,22 @@ func (c *HalClient) doRequest(req *http.Request) (Resource, error) {
 	return Decode(resp.Body)
 }
 
-func (c *HalClient) Get(path string) (Resource, error) {
+func (c *HalClient) GetFile(path string) (io.Reader, error) {
 	req, err := c.newGet(path)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := c.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Body, nil
+}
+
+func (c *HalClient) Get(path string) (Resource, error) {
+	req, err := c.newGetJSON(path)
 	if err != nil {
 		return nil, err
 	}
@@ -76,4 +99,11 @@ func (c *HalClient) LinkGet(link *Link) (Resource, error) {
 		return nil, errors.New("nil Link")
 	}
 	return c.Get(link.Href)
+}
+
+func (c *HalClient) LinkGetFile(link *Link) (io.Reader, error) {
+	if link == nil {
+		return nil, errors.New("nil Link")
+	}
+	return c.GetFile(link.Href)
 }
