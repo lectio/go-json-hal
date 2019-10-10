@@ -106,14 +106,14 @@ func (res *ResourceObject) GetDateTime(field string) (time.Time, error) {
 	return time.Parse(time.RFC3339, val)
 }
 
-func (res *ResourceObject) GetCreatedAt(field string) *time.Time {
+func (res *ResourceObject) GetCreatedAt() *time.Time {
 	if dt, err := res.GetDateTime("createdAt"); err == nil {
 		return &dt
 	}
 	return nil
 }
 
-func (res *ResourceObject) GetUpdatedAt(field string) *time.Time {
+func (res *ResourceObject) GetUpdatedAt() *time.Time {
 	if dt, err := res.GetDateTime("updatedAt"); err == nil {
 		return &dt
 	}
