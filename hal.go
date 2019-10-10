@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"time"
 )
 
 var (
@@ -56,40 +57,37 @@ type ResourceObject struct {
 	fields   map[string]interface{}
 }
 
-func (res *ResourceObject) HasField(field string) bool {
+func (res *ResourceObject) getField(field string) (interface{}, bool) {
 	if res.fields != nil {
-		if _, ok := res.fields[field]; ok {
-			return true
+		if val, ok := res.fields[field]; ok {
+			return val, true
 		}
 	}
-	return false
+	return nil, false
+}
+
+func (res *ResourceObject) HasField(field string) bool {
+	_, ok := res.getField(field)
+	return ok
 }
 
 func (res *ResourceObject) GetField(field string) interface{} {
-	if res.fields != nil {
-		if val, ok := res.fields[field]; ok {
-			return val
-		}
-	}
-	return nil
+	val, _ := res.getField(field)
+	return val
 }
 
 func (res *ResourceObject) GetString(field string) string {
-	if res.fields != nil {
-		if val, ok := res.fields[field]; ok {
-			if s, ok := val.(string); ok {
-				return s
-			}
+	val, ok := res.getField(field)
+	if ok {
+		if s, ok := val.(string); ok {
+			return s
 		}
 	}
 	return ""
 }
 
 func (res *ResourceObject) GetInt(field string) int {
-	if res.fields == nil {
-		return 0
-	}
-	val, ok := res.fields[field]
+	val, ok := res.getField(field)
 	if ok {
 		switch n := val.(type) {
 		case int:
@@ -101,6 +99,25 @@ func (res *ResourceObject) GetInt(field string) int {
 		}
 	}
 	return 0
+}
+
+func (res *ResourceObject) GetDateTime(field string) (time.Time, error) {
+	val := res.GetString(field)
+	return time.Parse(time.RFC3339, val)
+}
+
+func (res *ResourceObject) GetCreatedAt(field string) *time.Time {
+	if dt, err := res.GetDateTime("createdAt"); err == nil {
+		return &dt
+	}
+	return nil
+}
+
+func (res *ResourceObject) GetUpdatedAt(field string) *time.Time {
+	if dt, err := res.GetDateTime("updatedAt"); err == nil {
+		return &dt
+	}
+	return nil
 }
 
 func (res *ResourceObject) GetEmbeddedResource(name string, c *HalClient) Resource {
