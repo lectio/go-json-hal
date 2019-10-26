@@ -7,6 +7,8 @@ import (
 	"io"
 	"log"
 	"time"
+
+	duration "github.com/SpirentOrion/iso8601duration.v2"
 )
 
 var (
@@ -104,6 +106,11 @@ func (res *ResourceObject) GetInt(field string) int {
 func (res *ResourceObject) GetDateTime(field string) (time.Time, error) {
 	val := res.GetString(field)
 	return time.Parse(time.RFC3339, val)
+}
+
+func (res *ResourceObject) GetDuration(field string) (time.Duration, error) {
+	val := res.GetString(field)
+	return duration.Parse(val)
 }
 
 func (res *ResourceObject) GetCreatedAt() *time.Time {
