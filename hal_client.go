@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 )
 
 type HalClient struct {
@@ -92,6 +93,13 @@ func (c *HalClient) GetCollection(path string) (*Collection, error) {
 	}
 
 	return col, nil
+}
+
+func (c *HalClient) GetFilteredCollection(path string, filters *Filters) (*Collection, error) {
+	if f := filters.String(); f != "" {
+		path += "?filters=" + url.QueryEscape(f)
+	}
+	return c.GetCollection(path)
 }
 
 func (c *HalClient) LinkGet(link *Link) (Resource, error) {
