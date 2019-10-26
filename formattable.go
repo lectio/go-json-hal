@@ -43,6 +43,10 @@ func DecodeFormattable(data interface{}) (*Formattable, error) {
 	return f, nil
 }
 
-func NewFormattable() *Formattable {
-	return &Formattable{}
+func NewFormattable(format, raw, html string) *Formattable {
+	return &Formattable{
+		Format: format,
+		Raw:    raw,
+		Html:   html,
+	}
 }

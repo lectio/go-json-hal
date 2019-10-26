@@ -1,5 +1,7 @@
 package hal
 
+import "time"
+
 //
 // WorkPackage
 //
@@ -66,6 +68,21 @@ func (res *WorkPackage) GetAssignee(c *HalClient) *User {
 		return u
 	}
 	return nil
+}
+
+func (res *WorkPackage) AddTimeEntry(c *HalClient, te *TimeEntry) (Resource, error) {
+	if l := res.GetLink("project"); l != nil {
+		te.AddLink("project", *l)
+	}
+	if l := res.GetLink("self"); l != nil {
+		te.AddLink("workPackage", *l)
+	}
+	// Make sure 'spentOn' is set.
+	if !te.HasField("spentOn") {
+		te.SetSpentOn(time.Now())
+	}
+
+	return c.Post("/api/v3/time_entries", te)
 }
 
 // Register Factories

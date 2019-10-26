@@ -37,6 +37,12 @@ type Link struct {
 	Identifier string      `json:"identifier,omitempty"`
 }
 
+func NewLink(href string) *Link {
+	return &Link{
+		Href: href,
+	}
+}
+
 type Resource interface {
 	ResourceType() string
 	GetLink(string) *Link
@@ -78,6 +84,13 @@ func (res *ResourceObject) GetField(field string) interface{} {
 	return val
 }
 
+func (res *ResourceObject) SetField(field string, val interface{}) {
+	if res.fields == nil {
+		res.fields = make(map[string]interface{})
+	}
+	res.fields[field] = val
+}
+
 func (res *ResourceObject) GetString(field string) string {
 	val, ok := res.getField(field)
 	if ok {
@@ -111,6 +124,22 @@ func (res *ResourceObject) GetDateTime(field string) (time.Time, error) {
 func (res *ResourceObject) GetDuration(field string) (time.Duration, error) {
 	val := res.GetString(field)
 	return duration.Parse(val)
+}
+
+func (res *ResourceObject) SetDateTime(field string, val time.Time) {
+	str := val.Format(time.RFC3339)
+	res.SetField(field, str)
+}
+
+func (res *ResourceObject) SetDate(field string, val time.Time) {
+	str := val.Format("2006-01-02")
+	res.SetField(field, str)
+}
+
+func (res *ResourceObject) SetDuration(field string, val time.Duration) {
+	if str, err := duration.Format(val); err == nil {
+		res.SetField(field, str)
+	}
 }
 
 func (res *ResourceObject) GetCreatedAt() *time.Time {
@@ -159,6 +188,13 @@ func (res *ResourceObject) GetLink(name string) *Link {
 		return &link
 	}
 	return nil
+}
+
+func (res *ResourceObject) AddLink(name string, link Link) {
+	if res.Links == nil {
+		res.Links = make(map[string]Link)
+	}
+	res.Links[name] = link
 }
 
 func (res *ResourceObject) GetLinkResource(c *HalClient, name string) (Resource, error) {

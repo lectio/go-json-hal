@@ -30,6 +30,10 @@ func (res *TimeEntry) Comment() *Formattable {
 	return f
 }
 
+func (res *TimeEntry) SetComment(format, raw, html string) {
+	res.SetField("comment", NewFormattable(format, raw, html))
+}
+
 func (res *TimeEntry) SpentOn() *time.Time {
 	if dt, err := res.GetDateTime("spentOn"); err == nil {
 		return &dt
@@ -37,11 +41,24 @@ func (res *TimeEntry) SpentOn() *time.Time {
 	return nil
 }
 
+func (res *TimeEntry) SetSpentOn(spentOn time.Time) {
+	res.SetDate("spentOn", spentOn)
+}
+
 func (res *TimeEntry) Hours() *time.Duration {
 	if dt, err := res.GetDuration("hours"); err == nil {
 		return &dt
 	}
 	return nil
+}
+
+func (res *TimeEntry) SetHours(hours time.Duration) {
+	res.SetDuration("hours", hours)
+}
+
+func (res *TimeEntry) SetActivity(activity string) {
+	actLink := NewLink(activity)
+	res.AddLink("activity", *actLink)
 }
 
 // Register Factories
