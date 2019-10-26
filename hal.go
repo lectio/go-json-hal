@@ -175,6 +175,29 @@ func (res *ResourceObject) GetLinkResource(c *HalClient, name string) (Resource,
 	return linkRes, nil
 }
 
+func (res *ResourceObject) Delete(c *HalClient) error {
+	link := res.GetLink("delete")
+	if link == nil {
+		return errors.New("No 'delete' Link")
+	}
+	// Delete this resource
+	_, err := c.Delete(link.Href)
+	if err != nil {
+		// Failed to delete resource
+		return err
+	}
+	return nil
+}
+
+func (res *ResourceObject) Update(c *HalClient) (Resource, error) {
+	link := res.GetLink("updateImmediately")
+	if link == nil {
+		return nil, errors.New("No 'updateImmediately' Link")
+	}
+	// Patch this resource
+	return c.Patch(link.Href, res)
+}
+
 func (res *ResourceObject) ResourceType() string {
 	return res.Type
 }
@@ -185,6 +208,28 @@ func (res *ResourceObject) IsError() *Error {
 
 func (res *ResourceObject) UnmarshalHAL(data []byte) error {
 	return ResourceUnmarshal(res, data)
+}
+
+func (res *ResourceObject) MarshalJSON() ([]byte, error) {
+	m := make(map[string]interface{})
+	m["_type"] = res.Type
+	if res.Links != nil {
+		m["_links"] = res.Links
+	}
+	if res.embedded != nil {
+		m["_embedded"] = res.embedded
+	}
+	if res.fields != nil {
+		for k, v := range res.fields {
+			m[k] = v
+		}
+	}
+
+	return json.Marshal(m)
+}
+
+func (res *ResourceObject) MarshalHAL() ([]byte, error) {
+	return res.MarshalJSON()
 }
 
 func getFirstNonSpace(b json.RawMessage) byte {

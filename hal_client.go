@@ -1,6 +1,8 @@
 package hal
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -27,8 +29,8 @@ func (c *HalClient) SetAPIKey(key string) {
 	c.apiKey = &key
 }
 
-func (c *HalClient) newGet(path string) (*http.Request, error) {
-	req, err := http.NewRequest("GET", c.base+path, nil)
+func (c *HalClient) newRequest(method string, path string, body io.Reader) (*http.Request, error) {
+	req, err := http.NewRequest(method, c.base+path, body)
 	if err != nil {
 		return nil, err
 	}
@@ -38,8 +40,8 @@ func (c *HalClient) newGet(path string) (*http.Request, error) {
 	return req, nil
 }
 
-func (c *HalClient) newGetJSON(path string) (*http.Request, error) {
-	req, err := c.newGet(path)
+func (c *HalClient) newRequestJSON(method string, path string, body io.Reader) (*http.Request, error) {
+	req, err := c.newRequest(method, path, body)
 	if err != nil {
 		return nil, err
 	}
@@ -55,11 +57,20 @@ func (c *HalClient) doRequest(req *http.Request) (Resource, error) {
 	}
 	defer resp.Body.Close()
 
-	return Decode(resp.Body)
+	res, err := Decode(resp.Body)
+	if err != nil {
+		// HTTP Error
+		return nil, err
+	}
+	// Convert HAL errors to golang error
+	if err := res.IsError(); err != nil {
+		return nil, err
+	}
+	return res, nil
 }
 
 func (c *HalClient) GetFile(path string) (io.Reader, error) {
-	req, err := c.newGet(path)
+	req, err := c.newRequest("GET", path, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -73,12 +84,49 @@ func (c *HalClient) GetFile(path string) (io.Reader, error) {
 }
 
 func (c *HalClient) Get(path string) (Resource, error) {
-	req, err := c.newGetJSON(path)
+	req, err := c.newRequestJSON("GET", path, nil)
 	if err != nil {
 		return nil, err
 	}
 
 	return c.doRequest(req)
+}
+
+func (c *HalClient) Delete(path string) (*http.Response, error) {
+	req, err := c.newRequestJSON("DELETE", path, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return c.Do(req)
+}
+
+func (c *HalClient) Post(path string, res Resource) (Resource, error) {
+	// encode resource as JSON for Post body.
+	body, err := json.Marshal(res)
+	if err != nil {
+		return nil, err
+	}
+
+	if req, err := c.newRequestJSON("POST", path, bytes.NewBuffer(body)); err != nil {
+		return nil, err
+	} else {
+		return c.doRequest(req)
+	}
+}
+
+func (c *HalClient) Patch(path string, res Resource) (Resource, error) {
+	// encode resource as JSON for Post body.
+	body, err := json.Marshal(res)
+	if err != nil {
+		return nil, err
+	}
+
+	if req, err := c.newRequestJSON("PATCH", path, bytes.NewBuffer(body)); err != nil {
+		return nil, err
+	} else {
+		return c.doRequest(req)
+	}
 }
 
 func (c *HalClient) GetCollection(path string) (*Collection, error) {
