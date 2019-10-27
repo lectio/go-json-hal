@@ -3,6 +3,30 @@ package hal
 import "time"
 
 //
+// TimeEntry Activity
+//
+
+type TimeEntriesActivity struct {
+	ResourceObject
+}
+
+func NewTimeEntriesActivity() *TimeEntriesActivity {
+	return &TimeEntriesActivity{
+		ResourceObject{
+			Type: "TimeEntriesActivity",
+		},
+	}
+}
+
+func (res *TimeEntriesActivity) Id() int {
+	return res.GetInt("id")
+}
+
+func (res *TimeEntriesActivity) Name() string {
+	return res.GetString("name")
+}
+
+//
 // TimeEntry
 //
 
@@ -63,6 +87,9 @@ func (res *TimeEntry) SetActivity(activity string) {
 
 // Register Factories
 func init() {
+	resourceTypes["TimeEntriesActivity"] = func() Resource {
+		return NewTimeEntriesActivity()
+	}
 	resourceTypes["TimeEntry"] = func() Resource {
 		return NewTimeEntry()
 	}
