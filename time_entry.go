@@ -1,6 +1,8 @@
 package hal
 
-import "time"
+import (
+	"time"
+)
 
 //
 // TimeEntry Activity
@@ -55,7 +57,13 @@ func (res *TimeEntry) Comment() *Formattable {
 }
 
 func (res *TimeEntry) SetComment(format, raw, html string) {
-	res.SetField("comment", NewFormattable(format, raw, html))
+	// TODO: add Get/Set Formattable methods to ResourceObject
+	val := make(map[string]interface{})
+	val["format"] = format
+	val["raw"] = raw
+	val["html"] = html
+
+	res.SetField("comment", val)
 }
 
 func (res *TimeEntry) SpentOn() *time.Time {
