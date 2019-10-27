@@ -57,12 +57,16 @@ type Resource interface {
 //
 
 type ResourceObject struct {
-	Type  string          `json:"_type"`
-	Links map[string]Link `json:"_links"`
+	Type  string          `json:"_type,omitempty"`
+	Links map[string]Link `json:"_links,omitempty"`
 
 	// Don't export these fields
 	embedded map[string]interface{}
 	fields   map[string]interface{}
+}
+
+func NewUnkownResource() *ResourceObject {
+	return &ResourceObject{}
 }
 
 func (res *ResourceObject) getField(field string) (interface{}, bool) {
@@ -403,7 +407,8 @@ func decodeResource(mData map[string]json.RawMessage, res Resource) (Resource, e
 			}
 		}
 	} else {
-		return nil, fmt.Errorf("Missing '_type' field, unknown resource type.")
+		// Unknown resource
+		res = NewUnkownResource()
 	}
 
 	if err := res.decodeHAL(mData); err != nil {

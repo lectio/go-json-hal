@@ -1,7 +1,6 @@
 package hal
 
 import (
-	"encoding/json"
 	"fmt"
 )
 
@@ -10,13 +9,39 @@ import (
 //
 
 type Error struct {
-	ErrorIdentifier string `json:"errorIdentifier"`
-	Message         string `json:"message"`
+	ResourceObject
 }
 
 // Golang Error interface
 func (res *Error) Error() string {
-	return fmt.Sprintf("%s: %s", res.ErrorIdentifier, res.Message)
+	str := fmt.Sprintf("%s: %s", res.ErrorIdentifier(), res.Message())
+	// Check for list of errors
+	errors := res.GetEmbeddedResourceList("errors")
+	for _, embed := range errors {
+		if err, ok := embed.(*Error); ok {
+			str += "\n" + err.Error()
+		}
+	}
+	// Check for details
+	details := res.GetEmbeddedResource("details", nil)
+	if details != nil {
+		if res, ok := details.(*ResourceObject); ok {
+			for k, v := range res.fields {
+				str += fmt.Sprintf("-- %s = %s", k, v)
+			}
+		} else {
+			str += fmt.Sprintf("-- %+v", details)
+		}
+	}
+	return str
+}
+
+func (res *Error) ErrorIdentifier() string {
+	return res.GetString("errorIdentifier")
+}
+
+func (res *Error) Message() string {
+	return res.GetString("message")
 }
 
 func (res *Error) ResourceType() string {
@@ -31,25 +56,12 @@ func (res *Error) IsError() *Error {
 	return res
 }
 
-func (res *Error) decodeHAL(mData map[string]json.RawMessage) error {
-	for key, val := range mData {
-		switch key {
-		case "errorIdentifier":
-			if err := json.Unmarshal(val, &res.ErrorIdentifier); err != nil {
-				return err
-			}
-		case "message":
-			if err := json.Unmarshal(val, &res.Message); err != nil {
-				return err
-			}
-		default:
-		}
-	}
-	return nil
-}
-
 func NewError() *Error {
-	return &Error{}
+	return &Error{
+		ResourceObject{
+			Type: "Error",
+		},
+	}
 }
 
 // Register Resource Factories

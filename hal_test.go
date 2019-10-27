@@ -1,7 +1,6 @@
 package hal
 
 import (
-	"log"
 	"testing"
 )
 
@@ -37,7 +36,9 @@ func TestCollection_Unmarshal(t *testing.T) {
 	if !ok {
 		t.Errorf("Failed to cast Resource to Collection.")
 	}
-	log.Printf("Collection = %+v", col)
+	if col == nil {
+		t.Errorf("Collection expected.")
+	}
 	// Get Embedded projects
 	projects := col.Items()
 	if projects == nil {
@@ -46,7 +47,9 @@ func TestCollection_Unmarshal(t *testing.T) {
 	if len(projects) != 1 {
 		t.Errorf("Wrong number of projects: %d != 1", len(projects))
 	}
-	log.Printf("Project = %+v", projects[0])
+	if projects[0] == nil {
+		t.Errorf("Collection of projects expected.")
+	}
 }
 
 func TestError_Unmarshal(t *testing.T) {
@@ -61,5 +64,4 @@ func TestError_Unmarshal(t *testing.T) {
 	if resErr == nil {
 		t.Errorf("Hal resource isn't an Error object.")
 	}
-	log.Printf("Error = %+v", resErr)
 }

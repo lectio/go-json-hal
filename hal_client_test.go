@@ -2,7 +2,6 @@ package hal
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -107,7 +106,9 @@ func TestHalClient_Get(t *testing.T) {
 	if err != nil {
 		t.Errorf("HalClient failed to Get Hal resource: %v.", err)
 	}
-	log.Printf("res = %+v", res)
+	if res == nil {
+		t.Errorf("Resource expected.")
+	}
 }
 
 func TestHalClient_LinkGet(t *testing.T) {
@@ -119,7 +120,9 @@ func TestHalClient_LinkGet(t *testing.T) {
 	if err != nil {
 		t.Errorf("HalClient failed to Get Hal resource: %v.", err)
 	}
-	log.Printf("res 1 = %+v", res)
+	if res == nil {
+		t.Errorf("Resource expected.")
+	}
 
 	// Get a Link from the resource
 	link := res.GetLink("self")
@@ -132,8 +135,9 @@ func TestHalClient_LinkGet(t *testing.T) {
 	if err != nil {
 		t.Errorf("HalClient failed to Get linked resource: %v.", err)
 	}
-	log.Printf("res 2 = %+v", res2)
-
+	if res2 == nil {
+		t.Errorf("Resource expected.")
+	}
 }
 
 func TestHalClient_ApiKey(t *testing.T) {
@@ -147,11 +151,9 @@ func TestHalClient_ApiKey(t *testing.T) {
 		t.Errorf("HalClient failed to Get Hal resource: %v.", err)
 		return
 	}
-	resErr := res.IsError()
-	if resErr != nil {
-		t.Errorf("HalClient login failed: %v.", resErr.Message)
+	if res == nil {
+		t.Errorf("Resource expected.")
 	}
-	log.Printf("res = %+v", res)
 }
 
 func TestHalClient_Unauthorized(t *testing.T) {
@@ -160,10 +162,15 @@ func TestHalClient_Unauthorized(t *testing.T) {
 
 	res, err := ts.client.Get("/api/v3/my_preferences")
 	if err != nil {
-		t.Errorf("HalClient failed to Get Hal resource: %v.", err)
+		if resErr, ok := err.(*Error); ok {
+			if resErr.ErrorIdentifier() != "urn:openproject-org:api:v3:errors:Unauthenticated" {
+				t.Errorf("Expected unauthorized response: %v.", err)
+			}
+		} else {
+			t.Errorf("HalClient failed to Get Hal resource: %v.", err)
+		}
 	}
-	resErr := res.IsError()
-	if resErr == nil {
+	if res != nil {
 		t.Errorf("Expected unauthorized response: %v.", res)
 	}
 }
