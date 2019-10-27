@@ -138,6 +138,9 @@ func (res *ResourceObject) SetDate(field string, val time.Time) {
 
 func (res *ResourceObject) SetDuration(field string, val time.Duration) {
 	if str, err := duration.Format(val); err == nil {
+		if val == 0 {
+			str = "PT0S"
+		}
 		res.SetField(field, str)
 	}
 }
@@ -230,6 +233,8 @@ func (res *ResourceObject) Update(c *HalClient) (Resource, error) {
 	if link == nil {
 		return nil, errors.New("No 'updateImmediately' Link")
 	}
+	delete(res.fields, "createdAt")
+	delete(res.fields, "updatedAt")
 	// Patch this resource
 	return c.Patch(link.Href, res)
 }
